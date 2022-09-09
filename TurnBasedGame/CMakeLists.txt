@@ -9,6 +9,15 @@ if(CMAKE_BUILD_TYPE MATCHES Release)
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
 endif()
 
+if (MSVC)
+    # warning level 4 and all warnings as errors
+    add_compile_options(/W4 /w14640)
+    add_compile_definitions(_USE_MATH_DEFINES)
+else()
+    # lots of warnings and all warnings as errors
+    add_compile_options(-Wall -Wextra -Wshadow -Wnon-virtual-dtor)
+endif()
+
 set_property(GLOBAL PROPERTY USE_FOLDERS On)
 
 # Add data files

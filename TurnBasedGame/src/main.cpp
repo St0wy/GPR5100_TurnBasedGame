@@ -7,6 +7,7 @@
 
 int main()
 {
+	std::string salut = "YO";
     sf::RenderWindow window(sf::VideoMode(640 * 2, 480 * 2), "Client");
 	if (!ImGui::SFML::Init(window))
 	{
