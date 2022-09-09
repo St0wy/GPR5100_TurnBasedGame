@@ -1,9 +1,13 @@
-﻿# CMakeList.txt : CMake project for Formative10, include source and define
-# project specific logic here.
-cmake_minimum_required (VERSION 3.8)
+﻿cmake_minimum_required (VERSION 3.8)
 
 set (CMAKE_CXX_STANDARD 20)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
+
+if(CMAKE_BUILD_TYPE MATCHES Release)
+    set(SFML_STATIC_LIBRARIES TRUE)
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+endif()
 
 set_property(GLOBAL PROPERTY USE_FOLDERS On)
 
@@ -29,29 +33,37 @@ add_custom_target(
         DataTarget-${EXECUTABLE_CUSTOM_NAME}
         DEPENDS ${DATA_BINARY_FILES} ${DATA_FILES})
 
-# Get SFML and box2d libraries
+# Find vcpkg libraries
 find_package(OpenGL REQUIRED)
-find_package(SFML COMPONENTS system window graphics main CONFIG REQUIRED)
-find_package(box2d CONFIG REQUIRED)
+find_package(SFML COMPONENTS system window graphics network main audio CONFIG REQUIRED)
+find_package(imgui CONFIG REQUIRED)
+find_package(ImGui-SFML CONFIG REQUIRED)
+
 include_directories(include/)
 
 # Add source to this project's executable.  
-file(GLOB_RECURSE PROJECT_SRC src/*.cpp include/*.h)
+file(GLOB_RECURSE PROJECT_SRC src/*.cpp include/*.h[pp])
 
-# TODO: use the line with "win32" in it if you don't want the console
-add_executable(${EXECUTABLE_CUSTOM_NAME} ${PROJECT_SRC})
-# add_executable(${EXECUTABLE_CUSTOM_NAME} win32 ${PROJECT_SRC})
+set (SRC ${PROJECT_SRC} ${PROJECT_COMMON})
+
+add_executable(${EXECUTABLE_CUSTOM_NAME} "${SRC}")
+# add_executable(${EXECUTABLE_CUSTOM_NAME} WIN32 "${SRC}")
 
 # Add data dependencies
 add_dependencies(${EXECUTABLE_CUSTOM_NAME} DataTarget-${EXECUTABLE_CUSTOM_NAME})
 
 # Link libraries
-target_link_libraries(${EXECUTABLE_CUSTOM_NAME} PRIVATE sfml-main sfml-graphics sfml-audio sfml-window sfml-system)
+target_link_libraries(${EXECUTABLE_CUSTOM_NAME} PRIVATE sfml-graphics sfml-audio sfml-window sfml-system sfml-network)
 
-if(MSVC)
-target_link_libraries(${EXECUTABLE_CUSTOM_NAME} PRIVATE sfml-main FLAC OpenAL OpenGL Vorbis)
-else()
-target_link_libraries(${EXECUTABLE_CUSTOM_NAME} PRIVATE X11 FLAC UDev OpenAL  ${OPENGL_LIBRARIES} )
+if (WIN32)
+target_link_libraries(${EXECUTABLE_CUSTOM_NAME} PRIVATE sfml-main)
 endif()
 
-target_link_libraries(${EXECUTABLE_CUSTOM_NAME} PRIVATE box2d::box2d)
+if(MSVC)
+target_link_libraries(${EXECUTABLE_CUSTOM_NAME} PRIVATE FLAC OpenAL OpenGL Vorbis)
+else()
+target_link_libraries(${EXECUTABLE_CUSTOM_NAME} PRIVATE X11 FLAC UDev OpenAL ${OPENGL_LIBRARIES} )
+endif()
+
+target_link_libraries(${EXECUTABLE_CUSTOM_NAME} PRIVATE imgui::imgui)
+target_link_libraries(${EXECUTABLE_CUSTOM_NAME} PRIVATE ImGui-SFML::ImGui-SFML)

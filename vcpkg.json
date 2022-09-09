@@ -1,9 +1,5 @@
 {
-  // TODO: Rename project name and remove this comment
-  "name": "project-name",
+  "name": "turn-based-game",
   "version-string": "0.1.0",
-  "dependencies": [
-    "sfml",
-    "box2d"
-  ]
+  "dependencies": [ "sfml", "imgui-sfml", "imgui" ]
 }
