@@ -1,5 +1,5 @@
 {
   "name": "turn-based-game",
   "version-string": "0.1.0",
-  "dependencies": [ "sfml", "imgui-sfml", "imgui" ]
+  "dependencies": [ "sfml", "imgui-sfml", "imgui", "spdlog" ]
 }

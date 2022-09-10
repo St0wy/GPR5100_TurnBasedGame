@@ -1,4 +1,7 @@
 #pragma once
+#include <array>
+
+#include "Consts.hpp"
 
 namespace stw
 {
@@ -12,9 +15,19 @@ namespace stw
 
 	enum class PlayerNumber : char
 	{
+		None = 0,
+		/**
+		 * \brief This player is the X.
+		 */
 		P1,
+
+		/**
+		 * \brief This player is the O.
+		 */
 		P2,
 	};
+
+
 
 	class Packet
 	{
@@ -36,6 +49,4 @@ namespace stw
 	private:
 		PlayerNumber _playerNumber;
 	};
-
-
 }

@@ -47,6 +47,8 @@ find_package(OpenGL REQUIRED)
 find_package(SFML COMPONENTS system window graphics network main audio CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(ImGui-SFML CONFIG REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
+
 
 include_directories(include/)
 
@@ -76,3 +78,4 @@ endif()
 
 target_link_libraries(${EXECUTABLE_CUSTOM_NAME} PRIVATE imgui::imgui)
 target_link_libraries(${EXECUTABLE_CUSTOM_NAME} PRIVATE ImGui-SFML::ImGui-SFML)
+target_link_libraries(${EXECUTABLE_CUSTOM_NAME} PRIVATE spdlog::spdlog spdlog::spdlog_header_only)
