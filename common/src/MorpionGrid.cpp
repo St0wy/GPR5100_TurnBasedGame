@@ -155,7 +155,9 @@ stw::MorpionShape::MorpionShape(const PlayerNumber playerNumber, const sf::Vecto
 
 void stw::MorpionShape::SetPosition(const sf::Vector2i positionOnGrid)
 {
-	sf::Vector2f pos(positionOnGrid.x, positionOnGrid.y);
+	const auto x = static_cast<float>(positionOnGrid.x);
+	const auto y = static_cast<float>(positionOnGrid.y);
+	sf::Vector2f pos(x, y);
 	pos *= _drawSize / GRID_SIZE;
 	setPosition(pos);
 }

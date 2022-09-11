@@ -1,4 +1,6 @@
 ﻿cmake_minimum_required (VERSION 3.8)
+include(CMakePrintHelpers)
+
 
 set (CMAKE_CXX_STANDARD 20)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -11,8 +13,7 @@ endif()
 
 set_property(GLOBAL PROPERTY USE_FOLDERS On)
 
-set(SFML_STATIC_LIBRARIES TRUE)
-find_package(SFML COMPONENTS system window graphics network main audio CONFIG REQUIRED)
+find_package(SFML COMPONENTS system network graphics CONFIG REQUIRED)
 
 include_directories(include/)
 
@@ -20,8 +21,9 @@ include_directories(include/)
 file(GLOB_RECURSE PROJECT_SRC src/*.cpp include/*.h[pp])
 
 set (SRC ${PROJECT_SRC} ${PROJECT_COMMON})
+cmake_print_variables(SRC)
 
 add_executable(${EXECUTABLE_CUSTOM_NAME} "${SRC}")
 
 # Link libraries
-target_link_libraries(${EXECUTABLE_CUSTOM_NAME} PRIVATE sfml-network sfml-system)
+target_link_libraries(${EXECUTABLE_CUSTOM_NAME} PRIVATE sfml-network sfml-system sfml-graphics)

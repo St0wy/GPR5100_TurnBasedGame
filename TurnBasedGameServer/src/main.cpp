@@ -8,16 +8,16 @@
 #include "Consts.hpp"
 #include "ServerState.hpp"
 
-void ListenSockets(const sf::SocketSelector& selector, std::array<sf::TcpSocket&, 2>& players)
+void ListenSockets(const sf::SocketSelector& selector, std::array<sf::TcpSocket*, 2>& players)
 {
-	for (auto& player : players)
+	for (sf::TcpSocket* player : players)
 	{
-		if (!selector.isReady(player)) continue;
+		if (!selector.isReady(*player)) continue;
 
 		// The client has some data
 		// ReSharper disable once CppTooWideScopeInitStatement
 		sf::Packet packet;
-		if (player.receive(packet) == sf::Socket::Done)
+		if (player->receive(packet) == sf::Socket::Done)
 		{
 			std::cout << "Listening received data.\n";
 			// Read packet
@@ -47,7 +47,7 @@ int main()
 	sf::TcpSocket playerOne;
 	sf::TcpSocket playerTwo;
 
-	std::array<sf::TcpSocket&, 2> players{ playerOne, playerTwo };
+	std::array players{ &playerOne, &playerTwo };
 
 	auto state = ServerState::WaitingForP1Connexion;
 

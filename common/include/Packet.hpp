@@ -19,15 +19,13 @@ namespace stw
 		/**
 		 * \brief This player is the X.
 		 */
-		P1,
+		 P1,
 
-		/**
-		 * \brief This player is the O.
-		 */
-		P2,
+		 /**
+		  * \brief This player is the O.
+		  */
+		  P2,
 	};
-
-
 
 	class Packet
 	{
