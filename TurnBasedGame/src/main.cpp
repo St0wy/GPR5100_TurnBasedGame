@@ -1,22 +1,21 @@
+#include <iostream>
 #include <imgui.h>
 #include <imgui-SFML.h>
+#include <spdlog/spdlog.h>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
-#include "SFML/Network/IpAddress.hpp"
-#include <iostream>
-#include <spdlog/spdlog.h>
+#include <SFML/Network/IpAddress.hpp>
+#include <SFML/Network/Packet.hpp>
+#include <SFML/Network/Socket.hpp>
+#include <SFML/Network/TcpSocket.hpp>
 
 #include "MorpionGrid.hpp"
+#include "GameState.hpp"
 
-#include "SFML/Network/Packet.hpp"
-#include "SFML/Network/Socket.hpp"
-#include "SFML/Network/TcpSocket.hpp"
-
-
-bool RenderLoginWindow(char* ipInputBuffer, char* portInputBuffer, sf::IpAddress& ip, unsigned short& port
-)
+bool RenderLoginWindow(char ipInputBuffer[stw::IP_BUFFER_SIZE], char portInputBuffer[stw::PORT_BUFFER_SIZE],
+	sf::IpAddress& ip, unsigned short& port)
 {
 	bool show = true;
 	const ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -46,6 +45,40 @@ bool RenderLoginWindow(char* ipInputBuffer, char* portInputBuffer, sf::IpAddress
 }
 
 
+void HandleServerConnection(sf::TcpSocket& socket, char ipInputBuffer[stw::IP_BUFFER_SIZE],
+	char portInputBuffer[stw::PORT_BUFFER_SIZE], stw::GameState& state)
+{
+	static bool isConnecting = false;
+	sf::IpAddress ip{};
+	unsigned short port{};
+
+	const bool shouldTryToConnect = RenderLoginWindow(ipInputBuffer, portInputBuffer, ip, port);
+
+	if (!isConnecting && shouldTryToConnect)
+	{
+		isConnecting = shouldTryToConnect;
+	}
+
+	if (isConnecting)
+	{
+		const sf::Socket::Status status = socket.connect(ip, port, sf::seconds(10.0f));
+
+		if (status == sf::Socket::Disconnected || status == sf::Socket::Error)
+		{
+			std::cerr << "Error with the connection to the server.\n";
+			state = stw::GameState::ConnectingToServer;
+			isConnecting = false;
+		}
+
+		if (status == sf::Socket::Done || status == sf::Socket::NotReady)
+		{
+			state = stw::GameState::WaitingForPlayerNumber;
+			isConnecting = false;
+			std::cout << "Connection successful !\n";
+		}
+	}
+}
+
 int main()
 {
 	spdlog::set_level(spdlog::level::debug);
@@ -73,13 +106,9 @@ int main()
 	char portInputBuffer[stw::PORT_BUFFER_SIZE] = "8008";
 	char ipInputBuffer[stw::IP_BUFFER_SIZE] = "localhost";
 
-	sf::IpAddress ip;
-	unsigned short port;
-	bool isConnected = false;
-	bool isConnecting = false;
-
 	sf::Packet sendingPacket;
 	sf::Packet receivePacket;
+	auto state = stw::GameState::ConnectingToServer;
 
 	sf::Clock deltaClock;
 	while (window.isOpen())
@@ -103,7 +132,15 @@ int main()
 
 		ImGui::SFML::Update(window, deltaClock.restart());
 
-		if (isConnected)
+		switch (state) {
+		case stw::GameState::ConnectingToServer:
+		{
+			HandleServerConnection(socket, ipInputBuffer, portInputBuffer, state);
+			break;
+		}
+		case stw::GameState::WaitingForPlayerNumber:
+			break;
+		case stw::GameState::Playing:
 		{
 			grid.UpdateSelection(sf::Mouse::getPosition(window));
 
@@ -116,44 +153,24 @@ int main()
 					sf::Vector2i val = selection.value();
 					spdlog::debug("x:{};y:{}", val.x, val.y);
 				}
-
+				state = stw::GameState::WaitingForMove;
 			}
 			oldMousePressed = mousePressed;
 		}
-		else
-		{
-			bool shouldTryToConnect = RenderLoginWindow(ipInputBuffer, portInputBuffer, ip, port);
-
-			if (!isConnecting && shouldTryToConnect)
-			{
-				isConnecting = shouldTryToConnect;
-			}
-
-			if (isConnecting)
-			{
-				sf::Socket::Status status = socket.connect(ip, port, sf::seconds(10.0f));
-
-				if (status == sf::Socket::Disconnected || status == sf::Socket::Error)
-				{
-					std::cerr << "Error with the connection to the server.\n";
-					isConnected = false;
-					isConnecting = false;
-				}
-
-				if (status == sf::Socket::Done || status == sf::Socket::NotReady)
-				{
-					isConnected = true;
-					isConnecting = false;
-					std::cout << "Connection successful !\n";
-				}
-			}
+		break;
+		case stw::GameState::WaitingForMove:
+			break;
+		case stw::GameState::Win:
+			break;
+		case stw::GameState::Lose:
+			break;
 		}
 
 		window.clear();
 
 		ImGui::SFML::Render(window);
 
-		if (isConnected)
+		if (state == stw::GameState::Playing || state == stw::GameState::WaitingForMove)
 		{
 			window.draw(grid);
 		}
