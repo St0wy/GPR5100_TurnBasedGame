@@ -21,7 +21,7 @@ const stw::GridType& stw::MorpionGrid::Grid() const
 	return _grid;
 }
 
-bool stw::MorpionGrid::Play(const sf::Vector2<char> move, const PlayerNumber player)
+bool stw::MorpionGrid::Play(const sf::Vector2i move, const PlayerNumber player)
 {
 	PlayerNumber& cell = _grid[move.x][move.y];
 	if (cell == PlayerNumber::None)
@@ -58,6 +58,11 @@ void stw::MorpionGrid::UpdateSelection(const sf::Vector2i mousePos)
 	}
 
 	_selection = sf::Vector2i(xSelection, ySelection);
+}
+
+void stw::MorpionGrid::ResetSelection()
+{
+	_selection = {};
 }
 
 const std::optional<sf::Vector2i>& stw::MorpionGrid::Selection() const

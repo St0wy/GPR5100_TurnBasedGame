@@ -14,6 +14,7 @@ endif()
 set_property(GLOBAL PROPERTY USE_FOLDERS On)
 
 find_package(SFML COMPONENTS system network graphics CONFIG REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
 
 include_directories(include/)
 
@@ -27,3 +28,4 @@ add_executable(${EXECUTABLE_CUSTOM_NAME} "${SRC}")
 
 # Link libraries
 target_link_libraries(${EXECUTABLE_CUSTOM_NAME} PRIVATE sfml-network sfml-system sfml-graphics)
+target_link_libraries(${EXECUTABLE_CUSTOM_NAME} PRIVATE spdlog::spdlog spdlog::spdlog_header_only)

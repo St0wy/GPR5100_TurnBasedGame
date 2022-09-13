@@ -8,6 +8,7 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 
 #include "Packet.hpp"
+#include "Consts.hpp"
 
 namespace stw
 {
@@ -20,9 +21,10 @@ namespace stw
 		explicit MorpionGrid(float drawSize);
 
 		[[nodiscard]] const GridType& Grid() const;
-		bool Play(sf::Vector2<char> move, PlayerNumber player);
+		bool Play(sf::Vector2i move, PlayerNumber player);
 		[[nodiscard]] std::optional<PlayerNumber> GetWinner() const;
 		void UpdateSelection(sf::Vector2i mousePos);
+		void ResetSelection();
 		const std::optional<sf::Vector2i>& Selection() const;
 
 		void draw(sf::RenderTarget& target, sf::RenderStates states) const override;

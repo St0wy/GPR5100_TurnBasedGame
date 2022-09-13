@@ -6,6 +6,7 @@ namespace stw
 	{
 		ConnectingToServer,
 		WaitingForPlayerNumber,
+		WaitingForP2Connexion,
 		Playing,
 		WaitingForMove,
 		Win,

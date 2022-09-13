@@ -13,6 +13,7 @@
 
 #include "MorpionGrid.hpp"
 #include "GameState.hpp"
+#include "Packet.hpp"
 
 bool RenderLoginWindow(char ipInputBuffer[stw::IP_BUFFER_SIZE], char portInputBuffer[stw::PORT_BUFFER_SIZE],
 	sf::IpAddress& ip, unsigned short& port)
@@ -65,7 +66,7 @@ void HandleServerConnection(sf::TcpSocket& socket, char ipInputBuffer[stw::IP_BU
 
 		if (status == sf::Socket::Disconnected || status == sf::Socket::Error)
 		{
-			std::cerr << "Error with the connection to the server.\n";
+			spdlog::error("Error with the connection to the server.");
 			state = stw::GameState::ConnectingToServer;
 			isConnecting = false;
 		}
@@ -74,7 +75,29 @@ void HandleServerConnection(sf::TcpSocket& socket, char ipInputBuffer[stw::IP_BU
 		{
 			state = stw::GameState::WaitingForPlayerNumber;
 			isConnecting = false;
-			std::cout << "Connection successful !\n";
+			spdlog::info("Connection successful !");
+		}
+	}
+}
+
+void FindPlayerNumber(sf::TcpSocket& socket, sf::Packet& playerNumberPacket, stw::GameState& state, stw::PlayerNumber& myNumber)
+{
+	if (socket.receive(playerNumberPacket) == sf::Socket::Done)
+	{
+		stw::InitGamePacket initGamePacket;
+		playerNumberPacket >> initGamePacket;
+		myNumber = initGamePacket.playerNumber;
+		spdlog::info("My number is {}", static_cast<int>(myNumber));
+		switch (myNumber) {
+		case stw::PlayerNumber::None:
+			state = stw::GameState::ConnectingToServer;
+			break;
+		case stw::PlayerNumber::P1:
+			state = stw::GameState::Playing;
+			break;
+		case stw::PlayerNumber::P2:
+			state = stw::GameState::WaitingForMove;
+			break;
 		}
 	}
 }
@@ -108,7 +131,9 @@ int main()
 
 	sf::Packet sendingPacket;
 	sf::Packet receivePacket;
+	sf::Packet playerNumberPacket;
 	auto state = stw::GameState::ConnectingToServer;
+	auto myNumber = stw::PlayerNumber::None;
 
 	sf::Clock deltaClock;
 	while (window.isOpen())
@@ -139,6 +164,19 @@ int main()
 			break;
 		}
 		case stw::GameState::WaitingForPlayerNumber:
+			FindPlayerNumber(socket, playerNumberPacket, state, myNumber);
+			break;
+		case stw::GameState::WaitingForP2Connexion:
+			playerNumberPacket.clear();
+			if (socket.receive(playerNumberPacket) == sf::Socket::Done)
+			{
+				stw::Packet startGamePacket;
+				playerNumberPacket >> startGamePacket;
+				if (startGamePacket.type == stw::PacketType::StartGame)
+				{
+					state = stw::GameState::Playing;
+				}
+			}
 			break;
 		case stw::GameState::Playing:
 		{
@@ -150,10 +188,21 @@ int main()
 				std::optional<sf::Vector2i> selection = grid.Selection();
 				if (selection.has_value())
 				{
-					sf::Vector2i val = selection.value();
-					spdlog::debug("x:{};y:{}", val.x, val.y);
+					// Store and print move
+					stw::MovePacket movePacket;
+					movePacket.moveVector = selection.value();;
+					spdlog::debug("MOVE : x:{};y:{}", movePacket.moveVector.x, movePacket.moveVector.y);
+
+					sendingPacket.clear();
+					sendingPacket << movePacket;
+
+					sf::Socket::Status status = socket.send(sendingPacket);
+					if (status == sf::Socket::Done)
+					{
+						state = stw::GameState::WaitingForMove;
+						grid.ResetSelection();
+					}
 				}
-				state = stw::GameState::WaitingForMove;
 			}
 			oldMousePressed = mousePressed;
 		}
