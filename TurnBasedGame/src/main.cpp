@@ -82,6 +82,7 @@ void HandleServerConnection(sf::TcpSocket& socket, char ipInputBuffer[stw::IP_BU
 
 void FindPlayerNumber(sf::TcpSocket& socket, sf::Packet& playerNumberPacket, stw::GameState& state, stw::PlayerNumber& myNumber)
 {
+	spdlog::info("Finding number");
 	if (socket.receive(playerNumberPacket) == sf::Socket::Done)
 	{
 		stw::InitGamePacket initGamePacket;
@@ -93,7 +94,7 @@ void FindPlayerNumber(sf::TcpSocket& socket, sf::Packet& playerNumberPacket, stw
 			state = stw::GameState::ConnectingToServer;
 			break;
 		case stw::PlayerNumber::P1:
-			state = stw::GameState::Playing;
+			state = stw::GameState::WaitingForP2Connexion;
 			break;
 		case stw::PlayerNumber::P2:
 			state = stw::GameState::WaitingForMove;
@@ -124,7 +125,7 @@ int main()
 	// Session var
 	stw::MorpionGrid grid{};
 	grid.setPosition(30.0f, 30.0f);
-	bool oldMousePressed = false;
+	bool mousePressed = false;
 
 	char portInputBuffer[stw::PORT_BUFFER_SIZE] = "8008";
 	char ipInputBuffer[stw::IP_BUFFER_SIZE] = "localhost";
@@ -153,16 +154,16 @@ int main()
 				sf::Vector2f center = size / 2.0f;
 				window.setView(sf::View(center, size));
 			}
+
+			mousePressed = event.type == sf::Event::MouseButtonPressed && sf::Mouse::isButtonPressed(sf::Mouse::Button::Left);
 		}
 
 		ImGui::SFML::Update(window, deltaClock.restart());
 
 		switch (state) {
 		case stw::GameState::ConnectingToServer:
-		{
 			HandleServerConnection(socket, ipInputBuffer, portInputBuffer, state);
 			break;
-		}
 		case stw::GameState::WaitingForPlayerNumber:
 			FindPlayerNumber(socket, playerNumberPacket, state, myNumber);
 			break;
@@ -182,8 +183,7 @@ int main()
 		{
 			grid.UpdateSelection(sf::Mouse::getPosition(window));
 
-			bool mousePressed = sf::Mouse::isButtonPressed(sf::Mouse::Left);
-			if (mousePressed && !oldMousePressed)
+			if (mousePressed)
 			{
 				std::optional<sf::Vector2i> selection = grid.Selection();
 				if (selection.has_value())
@@ -204,7 +204,6 @@ int main()
 					}
 				}
 			}
-			oldMousePressed = mousePressed;
 		}
 		break;
 		case stw::GameState::WaitingForMove:

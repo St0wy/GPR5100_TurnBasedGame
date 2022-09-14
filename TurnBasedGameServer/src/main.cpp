@@ -85,13 +85,22 @@ void ConnectSockets(sf::TcpListener& listener, sf::SocketSelector& selector,
 			spdlog::info("Connection success with P2 !");
 			selector.add(playerTwo);
 
+			sf::Packet packetP2;
+			const stw::InitGamePacket initGamePacket(stw::PlayerNumber::P2);
+			packetP2 << initGamePacket;
+
+			if (playerTwo.send(packetP2) != sf::Socket::Done)
+			{
+				spdlog::error("Problem with sending player number to P2");
+			}
+
 			// Init start game packet
-			sf::Packet packet;
+			sf::Packet packetP1;
 			const stw::Packet startGamePacket(stw::PacketType::StartGame);
-			packet << startGamePacket;
+			packetP1 << startGamePacket;
 
 			// Send start game packet
-			if (playerOne.send(packet) != sf::Socket::Done)
+			if (playerOne.send(packetP1) != sf::Socket::Done)
 			{
 				spdlog::error("Problem with sending start game info to P1");
 			}
