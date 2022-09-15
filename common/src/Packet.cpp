@@ -1,5 +1,7 @@
 #include "Packet.hpp"
 
+#include "spdlog/spdlog.h"
+
 stw::Packet::Packet() : Packet(PacketType::None)
 {
 }
@@ -65,7 +67,7 @@ sf::Packet& stw::operator>>(sf::Packet& packet, InitGamePacket& p)
 }
 
 stw::MovePacket::MovePacket()
-	: moveVector(0, 0), playerNumber(PlayerNumber::None)
+	: Packet(stw::PacketType::Move), moveVector(0, 0), playerNumber(PlayerNumber::None)
 {
 }
 
@@ -81,10 +83,15 @@ sf::Packet& stw::operator>>(sf::Packet& packet, sf::Vector2i& moveVector)
 
 sf::Packet& stw::operator<<(sf::Packet& packet, const MovePacket& p)
 {
-	return packet << p.moveVector;
+	const auto type = static_cast<int>(p.type);
+	return packet << type << p.playerNumber << p.moveVector;
 }
 
 sf::Packet& stw::operator>>(sf::Packet& packet, MovePacket& p)
 {
-	return packet >> p.moveVector;
+	int type = 0;
+	packet >> type >> p.playerNumber >> p.moveVector;
+	spdlog::debug("type: {}", type);
+	p.type = static_cast<PacketType>(type);
+	return packet;
 }

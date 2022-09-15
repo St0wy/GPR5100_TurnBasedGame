@@ -51,7 +51,10 @@ void stw::MorpionGrid::UpdateSelection(const sf::Vector2i mousePos)
 	const int xSelection = FindSelection(relativeMousePos.x);
 	const int ySelection = FindSelection(relativeMousePos.y);
 
-	if (xSelection < 0 || ySelection < 0)
+	const bool isSelectionOutOfBound = xSelection < 0 || ySelection < 0;
+	const bool isCellNotEmpty = _grid[xSelection][ySelection] != PlayerNumber::None;
+
+	if (isSelectionOutOfBound || isCellNotEmpty)
 	{
 		_selection = {};
 		return;

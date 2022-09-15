@@ -189,8 +189,10 @@ int main()
 				if (selection.has_value())
 				{
 					// Store and print move
-					stw::MovePacket movePacket;
-					movePacket.moveVector = selection.value();;
+					stw::MovePacket movePacket{};
+					sf::Vector2i move = selection.value();
+					movePacket.moveVector = move;
+					movePacket.playerNumber = myNumber;
 					spdlog::debug("MOVE : x:{};y:{}", movePacket.moveVector.x, movePacket.moveVector.y);
 
 					sendingPacket.clear();
@@ -200,6 +202,7 @@ int main()
 					if (status == sf::Socket::Done)
 					{
 						state = stw::GameState::WaitingForMove;
+						grid.Play(move, myNumber);
 						grid.ResetSelection();
 					}
 				}
@@ -207,6 +210,15 @@ int main()
 		}
 		break;
 		case stw::GameState::WaitingForMove:
+			receivePacket.clear();
+			if (socket.receive(receivePacket) == sf::Socket::Done)
+			{
+				stw::MovePacket move;
+				receivePacket >> move;
+				spdlog::debug("RECIEVE MOVE : x:{};y:{}", move.moveVector.x, move.moveVector.y);
+				grid.Play(move.moveVector, move.playerNumber);
+				state = stw::GameState::Playing;
+			}
 			break;
 		case stw::GameState::Win:
 			break;

@@ -26,28 +26,36 @@ void ReceiveSockets(const sf::SocketSelector& selector, const std::array<sf::Tcp
 			// Read packet
 			stw::MovePacket movePacket;
 			packet >> movePacket;
-			spdlog::debug("Packet : x:{0}, y:{1}", movePacket.moveVector.x, movePacket.moveVector.y);
+			spdlog::debug("Packet recieved : x:{0}, y:{1}", movePacket.moveVector.x, movePacket.moveVector.y);
+
+			if (movePacket.type != stw::PacketType::Move)
+			{
+				spdlog::error("Wrong packet type recieved");
+			}
 
 			// Reset packet
-			//packet.clear();
-			//packet << movePacket;
+			packet.clear();
+			packet << movePacket;
 
-			//switch (movePacket.playerNumber) {
-			//case stw::PlayerNumber::None:
-			//	break;
-			//case stw::PlayerNumber::P1:
-			//	if (players[1]->send(packet) == sf::Socket::Done)
-			//	{
-			//		spdlog::info("Transfered P1 move to P2");
-			//	}
-			//	break;
-			//case stw::PlayerNumber::P2:
-			//	if (players[0]->send(packet) == sf::Socket::Done)
-			//	{
-			//		spdlog::info("Transfered P2 move to P1");
-			//	}
-			//	break;
-			//}
+			switch (movePacket.playerNumber) {
+			case stw::PlayerNumber::None:
+				spdlog::error("No player.");
+				break;
+			case stw::PlayerNumber::P1:
+				spdlog::debug("Trying to send move to P2...");
+				if (players[1]->send(packet) == sf::Socket::Done)
+				{
+					spdlog::info("Transfered P1 move to P2");
+				}
+				break;
+			case stw::PlayerNumber::P2:
+				spdlog::debug("Trying to send move to P1...");
+				if (players[0]->send(packet) == sf::Socket::Done)
+				{
+					spdlog::info("Transfered P2 move to P1");
+				}
+				break;
+			}
 		}
 	}
 }
@@ -112,6 +120,8 @@ void ConnectSockets(sf::TcpListener& listener, sf::SocketSelector& selector,
 
 int main()
 {
+	spdlog::set_level(spdlog::level::debug);
+
 	sf::TcpListener listener;
 	if (listener.listen(stw::SERVER_PORT) != sf::Socket::Done)
 	{
