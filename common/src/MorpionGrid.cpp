@@ -35,9 +35,52 @@ bool stw::MorpionGrid::Play(const sf::Vector2i move, const PlayerNumber player)
 
 std::optional<stw::PlayerNumber> stw::MorpionGrid::GetWinner() const
 {
-	// TODO
+	for (std::size_t i = 0; i < GRID_SIZE; ++i)
+	{
+		if (_grid[i][0] != PlayerNumber::None && _grid[i][0] == _grid[i][1] && _grid[i][1] == _grid[i][2])
+		{
+			return _grid[i][0];
+		}
+
+		if (_grid[0][i] != PlayerNumber::None && _grid[0][i] == _grid[1][i] && _grid[1][i] == _grid[2][i])
+		{
+			return _grid[0][i];
+		}
+	}
+
+	if (_grid[1][1] != PlayerNumber::None && _grid[0][0] == _grid[1][1] && _grid[1][1] == _grid[2][2])
+	{
+		return _grid[1][1];
+	}
+
+	if (_grid[1][1] != PlayerNumber::None && _grid[0][2] == _grid[1][1] && _grid[1][1] == _grid[2][0])
+	{
+		return _grid[1][1];
+	}
+
+	if (GetFilledCellAmmount() >= GRID_SIZE * GRID_SIZE)
+	{
+		return PlayerNumber::None;
+	}
 
 	return{};
+}
+
+std::size_t stw::MorpionGrid::GetFilledCellAmmount() const
+{
+	std::size_t count = 0;
+	for (std::size_t i = 0; i < GRID_SIZE; ++i)
+	{
+		for (std::size_t j = 0; j < GRID_SIZE; ++j)
+		{
+			if (_grid[i][j] != PlayerNumber::None)
+			{
+				count++;
+			}
+		}
+	}
+
+	return count;
 }
 
 void stw::MorpionGrid::UpdateSelection(const sf::Vector2i mousePos)
@@ -52,9 +95,8 @@ void stw::MorpionGrid::UpdateSelection(const sf::Vector2i mousePos)
 	const int ySelection = FindSelection(relativeMousePos.y);
 
 	const bool isSelectionOutOfBound = xSelection < 0 || ySelection < 0;
-	const bool isCellNotEmpty = _grid[xSelection][ySelection] != PlayerNumber::None;
 
-	if (isSelectionOutOfBound || isCellNotEmpty)
+	if (isSelectionOutOfBound || _grid[xSelection][ySelection] != PlayerNumber::None)
 	{
 		_selection = {};
 		return;

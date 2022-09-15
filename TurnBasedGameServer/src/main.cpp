@@ -10,16 +10,16 @@
 #include "Packet.hpp"
 #include "ServerState.hpp"
 
-void ReceiveSockets(const sf::SocketSelector& selector, const std::array<sf::TcpSocket*, 2>& players)
+void ReceiveSockets(const sf::SocketSelector& selector, std::array<sf::TcpSocket, 2>& players)
 {
-	for (sf::TcpSocket* player : players)
+	for (sf::TcpSocket& player : players)
 	{
-		if (!selector.isReady(*player)) continue;
+		if (!selector.isReady(player)) continue;
 
 		// The client has some data
 		// ReSharper disable once CppTooWideScopeInitStatement
 		sf::Packet packet;
-		if (player->receive(packet) == sf::Socket::Done)
+		if (player.receive(packet) == sf::Socket::Done)
 		{
 			spdlog::info("Listening received data...");
 
@@ -43,14 +43,14 @@ void ReceiveSockets(const sf::SocketSelector& selector, const std::array<sf::Tcp
 				break;
 			case stw::PlayerNumber::P1:
 				spdlog::debug("Trying to send move to P2...");
-				if (players[1]->send(packet) == sf::Socket::Done)
+				if (players[1].send(packet) == sf::Socket::Done)
 				{
 					spdlog::info("Transfered P1 move to P2");
 				}
 				break;
 			case stw::PlayerNumber::P2:
 				spdlog::debug("Trying to send move to P1...");
-				if (players[0]->send(packet) == sf::Socket::Done)
+				if (players[0].send(packet) == sf::Socket::Done)
 				{
 					spdlog::info("Transfered P2 move to P1");
 				}
@@ -61,24 +61,26 @@ void ReceiveSockets(const sf::SocketSelector& selector, const std::array<sf::Tcp
 }
 
 void ConnectSockets(sf::TcpListener& listener, sf::SocketSelector& selector,
-	sf::TcpSocket& playerOne, sf::TcpSocket& playerTwo, ServerState& state)
+	std::array<sf::TcpSocket, 2>& players, ServerState& state)
 {
+	if (!selector.isReady(listener)) return;
+
 	spdlog::info("Listening for a connection...");
 	// The listener is ready, there is a connection
 	// ReSharper disable once CppTooWideScopeInitStatement
 
 	if (state == ServerState::WaitingForP1Connexion)
 	{
-		if (listener.accept(playerOne) == sf::Socket::Done)
+		if (listener.accept(players[0]) == sf::Socket::Done)
 		{
 			spdlog::info("Connection success with P1 !");
-			selector.add(playerOne);
+			selector.add(players[0]);
 
 			sf::Packet packet;
 			const stw::InitGamePacket initGamePacket(stw::PlayerNumber::P1);
 			packet << initGamePacket;
 
-			if (playerOne.send(packet) != sf::Socket::Done)
+			if (players[0].send(packet) != sf::Socket::Done)
 			{
 				spdlog::error("Problem with sending player number to P1");
 			}
@@ -88,16 +90,16 @@ void ConnectSockets(sf::TcpListener& listener, sf::SocketSelector& selector,
 	}
 	else if (state == ServerState::WaitingForP2Connexion)
 	{
-		if (listener.accept(playerTwo) == sf::Socket::Done)
+		if (listener.accept(players[1]) == sf::Socket::Done)
 		{
 			spdlog::info("Connection success with P2 !");
-			selector.add(playerTwo);
+			selector.add(players[1]);
 
 			sf::Packet packetP2;
 			const stw::InitGamePacket initGamePacket(stw::PlayerNumber::P2);
 			packetP2 << initGamePacket;
 
-			if (playerTwo.send(packetP2) != sf::Socket::Done)
+			if (players[1].send(packetP2) != sf::Socket::Done)
 			{
 				spdlog::error("Problem with sending player number to P2");
 			}
@@ -108,7 +110,7 @@ void ConnectSockets(sf::TcpListener& listener, sf::SocketSelector& selector,
 			packetP1 << startGamePacket;
 
 			// Send start game packet
-			if (playerOne.send(packetP1) != sf::Socket::Done)
+			if (players[0].send(packetP1) != sf::Socket::Done)
 			{
 				spdlog::error("Problem with sending start game info to P1");
 			}
@@ -132,10 +134,7 @@ int main()
 	sf::SocketSelector selector;
 	selector.add(listener);
 
-	sf::TcpSocket playerOne;
-	sf::TcpSocket playerTwo;
-
-	const std::array players{ &playerOne, &playerTwo };
+	std::array<sf::TcpSocket, 2> players{};
 
 	auto state = ServerState::WaitingForP1Connexion;
 
@@ -145,17 +144,13 @@ int main()
 		// Make the selector wait for data on any socket
 		if (selector.wait(sf::seconds(10.0f)))
 		{
-			if (selector.isReady(listener))
+			if (state == ServerState::WaitingForP1Connexion || state == ServerState::WaitingForP2Connexion)
 			{
-				ConnectSockets(listener, selector, playerOne, playerTwo, state);
+				ConnectSockets(listener, selector, players, state);
 			}
-			else
+			else if (state == ServerState::WaitingForP1Move || state == ServerState::WaitingForP2Move)
 			{
-				if (state == ServerState::WaitingForP1Move || state == ServerState::WaitingForP2Move)
-				{
-					// The listener socket is not ready, test all other sockets (the clients)
-					ReceiveSockets(selector, players);
-				}
+				ReceiveSockets(selector, players);
 			}
 		}
 	}

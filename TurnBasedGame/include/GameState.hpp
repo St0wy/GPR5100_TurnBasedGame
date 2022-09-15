@@ -10,7 +10,8 @@ namespace stw
 		Playing,
 		WaitingForMove,
 		Win,
-		Lose
+		Lose,
+		Draw
 	};
 }
 

@@ -10,6 +10,8 @@
 #include <SFML/Network/Packet.hpp>
 #include <SFML/Network/Socket.hpp>
 #include <SFML/Network/TcpSocket.hpp>
+#include <SFML/Graphics/Font.hpp>
+#include <SFML/Graphics/Text.hpp>
 
 #include "MorpionGrid.hpp"
 #include "GameState.hpp"
@@ -103,6 +105,60 @@ void FindPlayerNumber(sf::TcpSocket& socket, sf::Packet& playerNumberPacket, stw
 	}
 }
 
+void CheckWin(const stw::MorpionGrid& grid, stw::GameState& state, const stw::PlayerNumber myNumber)
+{
+	const std::optional<stw::PlayerNumber> winner = grid.GetWinner();
+	if (winner.has_value())
+	{
+		const stw::PlayerNumber winnerNumber = winner.value();
+		if (winnerNumber == stw::PlayerNumber::None)
+		{
+			state = stw::GameState::Draw;
+		}
+		else if (winnerNumber == myNumber)
+		{
+			state = stw::GameState::Win;
+		}
+		else
+		{
+			state = stw::GameState::Lose;
+		}
+	}
+}
+
+void HandlePlayer(const sf::RenderWindow& window, sf::TcpSocket& socket, stw::MorpionGrid& grid,
+	const bool mousePressed, stw::GameState& state, const stw::PlayerNumber myNumber)
+{
+	grid.UpdateSelection(sf::Mouse::getPosition(window));
+
+	if (mousePressed)
+	{
+		const std::optional<sf::Vector2i> selection = grid.Selection();
+		if (selection.has_value())
+		{
+			// Store and print move
+			stw::MovePacket movePacket{};
+			const sf::Vector2i move = selection.value();
+			movePacket.moveVector = move;
+			movePacket.playerNumber = myNumber;
+			spdlog::debug("MOVE : x:{};y:{}", movePacket.moveVector.x, movePacket.moveVector.y);
+
+			sf::Packet sendingPacket;
+			sendingPacket << movePacket;
+
+			const sf::Socket::Status status = socket.send(sendingPacket);
+			if (status == sf::Socket::Done)
+			{
+				state = stw::GameState::WaitingForMove;
+				grid.Play(move, myNumber);
+				grid.ResetSelection();
+
+				CheckWin(grid, state, myNumber);
+			}
+		}
+	}
+}
+
 int main()
 {
 	spdlog::set_level(spdlog::level::debug);
@@ -130,11 +186,21 @@ int main()
 	char portInputBuffer[stw::PORT_BUFFER_SIZE] = "8008";
 	char ipInputBuffer[stw::IP_BUFFER_SIZE] = "localhost";
 
-	sf::Packet sendingPacket;
 	sf::Packet receivePacket;
 	sf::Packet playerNumberPacket;
 	auto state = stw::GameState::ConnectingToServer;
 	auto myNumber = stw::PlayerNumber::None;
+	sf::Font lModern;
+	sf::Text text;
+
+	if (!lModern.loadFromFile("data/lmodern.otf"))
+	{
+		spdlog::error("Could not load lmodern font");
+	}
+
+	text.setFont(lModern);
+	text.setCharacterSize(64);
+	text.setFillColor(sf::Color::White);
 
 	sf::Clock deltaClock;
 	while (window.isOpen())
@@ -181,32 +247,7 @@ int main()
 			break;
 		case stw::GameState::Playing:
 		{
-			grid.UpdateSelection(sf::Mouse::getPosition(window));
-
-			if (mousePressed)
-			{
-				std::optional<sf::Vector2i> selection = grid.Selection();
-				if (selection.has_value())
-				{
-					// Store and print move
-					stw::MovePacket movePacket{};
-					sf::Vector2i move = selection.value();
-					movePacket.moveVector = move;
-					movePacket.playerNumber = myNumber;
-					spdlog::debug("MOVE : x:{};y:{}", movePacket.moveVector.x, movePacket.moveVector.y);
-
-					sendingPacket.clear();
-					sendingPacket << movePacket;
-
-					sf::Socket::Status status = socket.send(sendingPacket);
-					if (status == sf::Socket::Done)
-					{
-						state = stw::GameState::WaitingForMove;
-						grid.Play(move, myNumber);
-						grid.ResetSelection();
-					}
-				}
-			}
+			HandlePlayer(window, socket, grid, mousePressed, state, myNumber);
 		}
 		break;
 		case stw::GameState::WaitingForMove:
@@ -218,11 +259,17 @@ int main()
 				spdlog::debug("RECIEVE MOVE : x:{};y:{}", move.moveVector.x, move.moveVector.y);
 				grid.Play(move.moveVector, move.playerNumber);
 				state = stw::GameState::Playing;
+				CheckWin(grid, state, myNumber);
 			}
 			break;
 		case stw::GameState::Win:
+			text.setString("You Win !");
 			break;
 		case stw::GameState::Lose:
+			text.setString("You Lose !");
+			break;
+		case stw::GameState::Draw:
+			text.setString("There is no winner !");
 			break;
 		}
 
@@ -233,6 +280,10 @@ int main()
 		if (state == stw::GameState::Playing || state == stw::GameState::WaitingForMove)
 		{
 			window.draw(grid);
+		}
+		else if (state == stw::GameState::Win || state == stw::GameState::Lose || state == stw::GameState::Draw)
+		{
+			window.draw(text);
 		}
 
 		window.display();

@@ -22,7 +22,14 @@ namespace stw
 
 		[[nodiscard]] const GridType& Grid() const;
 		bool Play(sf::Vector2i move, PlayerNumber player);
+
+		/**
+		 * \brief Gets the winner of the game.
+		 * \return The winner of the game. Returns PlayerNumber::None if it's a draw and no value if there's no winner.
+		 */
 		[[nodiscard]] std::optional<PlayerNumber> GetWinner() const;
+		std::size_t GetFilledCellAmmount() const;
+
 		void UpdateSelection(sf::Vector2i mousePos);
 		void ResetSelection();
 		const std::optional<sf::Vector2i>& Selection() const;

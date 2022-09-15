@@ -9,6 +9,6 @@ namespace stw
 
 	constexpr unsigned short SERVER_PORT = 8008;
 	constexpr std::size_t PORT_BUFFER_SIZE = 10;
-	constexpr std::size_t IP_BUFFER_SIZE = 15;
+	constexpr std::size_t IP_BUFFER_SIZE = 45;
 	constexpr ImGuiWindowFlags WINDOW_FULLSCREEN_FLAGS = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings;
 }
