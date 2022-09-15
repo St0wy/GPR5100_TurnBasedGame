@@ -57,8 +57,8 @@ file(GLOB_RECURSE PROJECT_SRC src/*.cpp include/*.h[pp])
 
 set (SRC ${PROJECT_SRC} ${PROJECT_COMMON})
 
-add_executable(${EXECUTABLE_CUSTOM_NAME} "${SRC}")
-# add_executable(${EXECUTABLE_CUSTOM_NAME} WIN32 "${SRC}")
+# add_executable(${EXECUTABLE_CUSTOM_NAME} "${SRC}")
+add_executable(${EXECUTABLE_CUSTOM_NAME} WIN32 "${SRC}")
 
 # Add data dependencies
 add_dependencies(${EXECUTABLE_CUSTOM_NAME} DataTarget-${EXECUTABLE_CUSTOM_NAME})

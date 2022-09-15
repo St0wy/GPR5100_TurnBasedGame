@@ -84,7 +84,6 @@ void HandleServerConnection(sf::TcpSocket& socket, char ipInputBuffer[stw::IP_BU
 
 void FindPlayerNumber(sf::TcpSocket& socket, sf::Packet& playerNumberPacket, stw::GameState& state, stw::PlayerNumber& myNumber)
 {
-	spdlog::info("Finding number");
 	if (socket.receive(playerNumberPacket) == sf::Socket::Done)
 	{
 		stw::InitGamePacket initGamePacket;
@@ -234,6 +233,7 @@ int main()
 			FindPlayerNumber(socket, playerNumberPacket, state, myNumber);
 			break;
 		case stw::GameState::WaitingForP2Connexion:
+			text.setString("Waiting for P2...");
 			playerNumberPacket.clear();
 			if (socket.receive(playerNumberPacket) == sf::Socket::Done)
 			{
@@ -281,7 +281,8 @@ int main()
 		{
 			window.draw(grid);
 		}
-		else if (state == stw::GameState::Win || state == stw::GameState::Lose || state == stw::GameState::Draw)
+		else if (state == stw::GameState::Win || state == stw::GameState::Lose ||
+			state == stw::GameState::Draw || state == stw::GameState::WaitingForP2Connexion)
 		{
 			window.draw(text);
 		}
