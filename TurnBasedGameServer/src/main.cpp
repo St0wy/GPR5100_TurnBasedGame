@@ -1,10 +1,11 @@
-#include <iostream>
 #include <array>
-#include <spdlog/spdlog.h>
+
+#include <SFML/Network/Packet.hpp>
+#include <SFML/Network/SocketSelector.hpp>
 #include <SFML/Network/TcpListener.hpp>
 #include <SFML/Network/TcpSocket.hpp>
-#include <SFML/Network/SocketSelector.hpp>
-#include <SFML/Network/Packet.hpp>
+
+#include <spdlog/spdlog.h>
 
 #include "Consts.hpp"
 #include "Packet.hpp"
