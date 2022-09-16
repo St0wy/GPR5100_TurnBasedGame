@@ -26,7 +26,7 @@ sf::Packet& stw::operator>>(sf::Packet& packet, Packet& p)
 }
 
 stw::InitGamePacket::InitGamePacket()
-	:InitGamePacket(stw::PlayerNumber::None)
+	:InitGamePacket(PlayerNumber::None)
 {
 }
 
@@ -67,7 +67,7 @@ sf::Packet& stw::operator>>(sf::Packet& packet, InitGamePacket& p)
 }
 
 stw::MovePacket::MovePacket()
-	: Packet(stw::PacketType::Move), moveVector(0, 0), playerNumber(PlayerNumber::None)
+	: Packet(PacketType::Move), moveVector(0, 0), playerNumber(PlayerNumber::None)
 {
 }
 

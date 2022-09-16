@@ -9,7 +9,7 @@
 
 #include <spdlog/spdlog.h>
 
-Client::Client()
+stw::Client::Client()
 	: _window(sf::VideoMode(640 * 2, 480 * 2), "Online Morpion")
 {
 	if (!ImGui::SFML::Init(_window))
@@ -35,7 +35,7 @@ Client::Client()
 	_text.setFillColor(sf::Color::White);
 }
 
-void Client::Run()
+void stw::Client::Run()
 {
 	while (_window.isOpen())
 	{
@@ -61,49 +61,49 @@ void Client::Run()
 		ImGui::SFML::Update(_window, _deltaClock.restart());
 
 		switch (_state) {
-		case stw::GameState::ConnectingToServer:
+		case GameState::ConnectingToServer:
 			HandleServerConnection();
 			break;
-		case stw::GameState::WaitingForPlayerNumber:
+		case GameState::WaitingForPlayerNumber:
 			FindPlayerNumber();
 			break;
-		case stw::GameState::WaitingForP2Connexion:
+		case GameState::WaitingForP2Connexion:
 			_text.setString("Waiting for P2...");
 			_playerNumberPacket.clear();
 			if (_socket.receive(_playerNumberPacket) == sf::Socket::Done)
 			{
-				stw::Packet startGamePacket;
+				Packet startGamePacket;
 				_playerNumberPacket >> startGamePacket;
-				if (startGamePacket.type == stw::PacketType::StartGame)
+				if (startGamePacket.type == PacketType::StartGame)
 				{
-					_state = stw::GameState::Playing;
+					_state = GameState::Playing;
 				}
 			}
 			break;
-		case stw::GameState::Playing:
+		case GameState::Playing:
 		{
 			HandlePlayer();
 		}
 		break;
-		case stw::GameState::WaitingForMove:
+		case GameState::WaitingForMove:
 			_receivePacket.clear();
 			if (_socket.receive(_receivePacket) == sf::Socket::Done)
 			{
-				stw::MovePacket move;
+				MovePacket move;
 				_receivePacket >> move;
 				spdlog::debug("RECIEVE MOVE : x:{};y:{}", move.moveVector.x, move.moveVector.y);
 				_grid.Play(move.moveVector, move.playerNumber);
-				_state = stw::GameState::Playing;
+				_state = GameState::Playing;
 				CheckWin();
 			}
 			break;
-		case stw::GameState::Win:
+		case GameState::Win:
 			_text.setString("You Win !");
 			break;
-		case stw::GameState::Lose:
+		case GameState::Lose:
 			_text.setString("You Lose !");
 			break;
-		case stw::GameState::Draw:
+		case GameState::Draw:
 			_text.setString("There is no winner !");
 			break;
 		}
@@ -112,12 +112,12 @@ void Client::Run()
 
 		ImGui::SFML::Render(_window);
 
-		if (_state == stw::GameState::Playing || _state == stw::GameState::WaitingForMove)
+		if (_state == GameState::Playing || _state == GameState::WaitingForMove)
 		{
 			_window.draw(_grid);
 		}
-		else if (_state == stw::GameState::Win || _state == stw::GameState::Lose ||
-			_state == stw::GameState::Draw || _state == stw::GameState::WaitingForP2Connexion)
+		else if (_state == GameState::Win || _state == GameState::Lose ||
+			_state == GameState::Draw || _state == GameState::WaitingForP2Connexion)
 		{
 			_window.draw(_text);
 		}
@@ -128,18 +128,18 @@ void Client::Run()
 	ImGui::SFML::Shutdown();
 }
 
-bool Client::RenderLoginWindow(sf::IpAddress& ip, unsigned short& port)
+bool stw::Client::RenderLoginWindow(sf::IpAddress& ip, unsigned short& port)
 {
 	bool show = true;
 	const ImGuiViewport* viewport = ImGui::GetMainViewport();
 	ImGui::SetNextWindowPos(viewport->WorkPos);
 	ImGui::SetNextWindowSize(viewport->WorkSize);
 
-	ImGui::Begin("Login", &show, stw::WINDOW_FULLSCREEN_FLAGS);
+	ImGui::Begin("Login", &show, WINDOW_FULLSCREEN_FLAGS);
 	ImGui::TextWrapped("Please type your name, ip of the server and its ports.");
 	// ReSharper disable once CppTooWideScope
-	ImGui::InputTextWithHint("##ip", "IP", _ipInputBuffer, stw::IP_BUFFER_SIZE);
-	ImGui::InputTextWithHint("##port", "Port", _portInputBuffer, stw::PORT_BUFFER_SIZE);
+	ImGui::InputTextWithHint("##ip", "IP", _ipInputBuffer, IP_BUFFER_SIZE);
+	ImGui::InputTextWithHint("##port", "Port", _portInputBuffer, PORT_BUFFER_SIZE);
 	bool isConnecting = false;
 	if (ImGui::Button("Login"))
 	{
@@ -157,7 +157,7 @@ bool Client::RenderLoginWindow(sf::IpAddress& ip, unsigned short& port)
 	return isConnecting;
 }
 
-void Client::HandleServerConnection()
+void stw::Client::HandleServerConnection()
 {
 	static bool isConnecting = false;
 	sf::IpAddress ip{};
@@ -177,63 +177,63 @@ void Client::HandleServerConnection()
 		if (status == sf::Socket::Disconnected || status == sf::Socket::Error)
 		{
 			spdlog::error("Error with the connection to the server.");
-			_state = stw::GameState::ConnectingToServer;
+			_state = GameState::ConnectingToServer;
 			isConnecting = false;
 		}
 
 		if (status == sf::Socket::Done || status == sf::Socket::NotReady)
 		{
-			_state = stw::GameState::WaitingForPlayerNumber;
+			_state = GameState::WaitingForPlayerNumber;
 			isConnecting = false;
 			spdlog::info("Connection successful !");
 		}
 	}
 }
 
-void Client::FindPlayerNumber()
+void stw::Client::FindPlayerNumber()
 {
 	if (_socket.receive(_playerNumberPacket) == sf::Socket::Done)
 	{
-		stw::InitGamePacket initGamePacket;
+		InitGamePacket initGamePacket;
 		_playerNumberPacket >> initGamePacket;
 		_myNumber = initGamePacket.playerNumber;
 		spdlog::info("My number is {}", static_cast<int>(_myNumber));
 		switch (_myNumber) {
-		case stw::PlayerNumber::None:
-			_state = stw::GameState::ConnectingToServer;
+		case PlayerNumber::None:
+			_state = GameState::ConnectingToServer;
 			break;
-		case stw::PlayerNumber::P1:
-			_state = stw::GameState::WaitingForP2Connexion;
+		case PlayerNumber::P1:
+			_state = GameState::WaitingForP2Connexion;
 			break;
-		case stw::PlayerNumber::P2:
-			_state = stw::GameState::WaitingForMove;
+		case PlayerNumber::P2:
+			_state = GameState::WaitingForMove;
 			break;
 		}
 	}
 }
 
-void Client::CheckWin()
+void stw::Client::CheckWin()
 {
-	const std::optional<stw::PlayerNumber> winner = _grid.GetWinner();
+	const std::optional<PlayerNumber> winner = _grid.GetWinner();
 	if (winner.has_value())
 	{
-		const stw::PlayerNumber winnerNumber = winner.value();
-		if (winnerNumber == stw::PlayerNumber::None)
+		const PlayerNumber winnerNumber = winner.value();
+		if (winnerNumber == PlayerNumber::None)
 		{
-			_state = stw::GameState::Draw;
+			_state = GameState::Draw;
 		}
 		else if (winnerNumber == _myNumber)
 		{
-			_state = stw::GameState::Win;
+			_state = GameState::Win;
 		}
 		else
 		{
-			_state = stw::GameState::Lose;
+			_state = GameState::Lose;
 		}
 	}
 }
 
-void Client::HandlePlayer()
+void stw::Client::HandlePlayer()
 {
 	_grid.UpdateSelection(sf::Mouse::getPosition(_window));
 
@@ -243,7 +243,7 @@ void Client::HandlePlayer()
 		if (selection.has_value())
 		{
 			// Store and print move
-			stw::MovePacket movePacket{};
+			MovePacket movePacket{};
 			const sf::Vector2i move = selection.value();
 			movePacket.moveVector = move;
 			movePacket.playerNumber = _myNumber;
@@ -255,7 +255,7 @@ void Client::HandlePlayer()
 			const sf::Socket::Status status = _socket.send(sendingPacket);
 			if (status == sf::Socket::Done)
 			{
-				_state = stw::GameState::WaitingForMove;
+				_state = GameState::WaitingForMove;
 				_grid.Play(move, _myNumber);
 				_grid.ResetSelection();
 

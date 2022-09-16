@@ -6,6 +6,6 @@ int main()
 {
 	spdlog::set_level(spdlog::level::debug);
 
-	Client client{};
+	stw::Client client{};
 	client.Run();
 }
